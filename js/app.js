@@ -556,12 +556,31 @@ const INDEX = [
   {t:'Serah terima pasien', k:'operan serah terima handover pasien catatan', cat:'Catatan', go:()=>go('ho',()=>$('#hoBed').focus())},
   {t:'Catatan SOAP', k:'soap rekam medis catatan poliklinik anamnesis', cat:'Catatan', go:jumpTo('ho','c-soap')}
 ];
+function renderHomePatients(){
+  const el = $('#homePatients');
+  if(!el) return;
+  const open = patients.filter(p=>!p.done).sort((a,b)=>(TRI_ORDER[a.tri]-TRI_ORDER[b.tri])||(a.t-b.t)).slice(0,4);
+  if(!open.length){
+    el.innerHTML = '<div class="empty-cockpit">Belum ada pasien aktif. Tambahkan pasien untuk membuat handover lebih terstruktur.</div>';
+    return;
+  }
+  el.innerHTML = open.map(p=>`<button type="button" class="home-patient ${esc(p.tri)}" data-home-patient="${p.t}">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="bed">${esc(p.bed)}</span>
+    <span><b class="pid">${esc(p.id)}</b><small class="dx">${esc(p.dx||'Belum ada diagnosis kerja')}</small></span>
+    <span class="tri-badge ${esc(p.tri)}">${esc(p.tri)}</span>
+  </button>`).join('');
+}
 function renderHomeMeta(){
   const tools = INDEX.length;
   const open = patients.filter(p=>!p.done).length;
   $('#toolCount').textContent = tools;
   $('#homeOpenTasks').textContent = open;
+  $('#homeOpenTasks').title = open ? `${open} pasien belum selesai` : 'Tidak ada tugas terbuka';
+  $('#focusOpen').textContent = String(open).padStart(2,'0');
   $('#homeShiftState').textContent = shiftStart ? 'Sedang jaga' : 'Belum mulai';
+  if($('#homeOnlineText')) $('#homeOnlineText').textContent = navigator.onLine ? 'Online' : 'Offline';
+  renderHomePatients();
 }
 function refreshHomeMeta(){
   if(document.querySelector('#v-home:not([hidden])')) renderHomeMeta();
@@ -577,13 +596,16 @@ function renderRecentTools(){
   }).join('');
 }
 const QUICK_TOOLS = [
-  ['Dosis obat IGD','Hitung cepat berdasarkan berat badan',()=>go('dose',()=>$('#bw').focus())],
-  ['Skor klinis','NEWS2, GCS, HEART, Wells, dll.',()=>go('score')],
-  ['Kalkulator','AGD, eGFR, MAP, Parkland, vasoaktif',()=>go('calc')],
-  ['Algoritma','Buka protokol kegawatdaruratan',()=>go('algo')]
+  ['Dosis obat','Hitung cepat berdasarkan berat badan',()=>go('dose',()=>$('#bw').focus()),'i-dose'],
+  ['Skor klinis','NEWS2, GCS, HEART, Wells, dll.',()=>go('score'),'i-score'],
+  ['Kalkulator','AGD, eGFR, MAP, vasoaktif',()=>go('calc'),'i-calc'],
+  ['Emergency','Protokol kegawatdaruratan',()=>go('algo'),'i-emergency'],
+  ['Pasien','Patient workspace & handover',()=>go('ho',()=>$('#hoBed').focus()),'i-patient'],
+  ['Pediatri','Resusitasi, vital, rehidrasi',()=>go('peds'),'i-peds']
 ];
-$('#quickTools').innerHTML = QUICK_TOOLS.map((x,i)=>`<button type="button" class="quick-tool" data-quick="${i}"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></button>`).join('');
+$('#quickTools').innerHTML = QUICK_TOOLS.map((x,i)=>`<button type="button" class="quick-tool" data-quick="${i}"><svg aria-hidden="true" width="24" height="24"><use href="#${x[3]}"/></svg><b>${esc(x[0])}</b><span>${esc(x[1])}</span></button>`).join('');
 $('#quickTools').addEventListener('click',e=>{const b=e.target.closest('[data-quick]');if(b)QUICK_TOOLS[+b.dataset.quick][2]();});
+$('#homePatients').addEventListener('click',e=>{const b=e.target.closest('[data-home-patient]');if(b){go('ho',()=>{const target=document.querySelector(`[data-done="${b.dataset.homePatient}"]`);(target||$('#hoBed')).scrollIntoView({block:'center'});});}});
 $('#recentList').addEventListener('click',e=>{const b=e.target.closest('[data-recent]');if(b)go(b.dataset.recent);});
 $('#clearRecent').addEventListener('click',()=>{recentViews=[];store.set('recentViews',[]);renderRecentTools();toast('Riwayat dibersihkan');});
 $('#focusSearch').addEventListener('click',()=>$('#q').focus());
