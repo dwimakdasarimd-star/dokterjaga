@@ -49,13 +49,25 @@
 
     <!-- HOME -->
     <section class="view" id="v-home">
-      <h2>Apa yang Anda butuhkan sekarang?</h2>
-      <p class="lede">Dosis berbasis berat badan, skor klinis, kalkulator, pediatri, algoritma kegawatdaruratan, dan catatan jaga dalam satu tempat.</p>
-      <div class="search">
-        <svg aria-hidden="true"><use href="#i-search"/></svg>
-        <input id="q" type="search" placeholder="Cari: GCS, adenosin, eGFR, anafilaksis…" autocomplete="off" aria-label="Cari alat">
+      <div class="home-hero">
+        <div class="page-kicker">Clinical workspace</div>
+        <h2>Apa yang Anda butuhkan sekarang?</h2>
+        <p class="lede">Satu workspace cepat untuk dokter jaga: cari alat, hitung dosis, nilai skor, buka algoritma, dan kelola handover tanpa berpindah aplikasi.</p>
+        <div class="home-toolbar">
+          <div class="search">
+            <svg aria-hidden="true"><use href="#i-search"/></svg>
+            <input id="q" type="search" placeholder="Cari alat: GCS, adenosin, eGFR, anafilaksis…" autocomplete="off" aria-label="Cari alat">
+          </div>
+          <button class="btn ghost" type="button" id="focusSearch">Fokus pencarian</button>
+        </div>
+        <div class="home-stats">
+          <div class="home-stat"><span>Alat klinis</span><strong id="toolCount">0</strong></div>
+          <div class="home-stat"><span>Kasus aktif</span><strong id="homeOpenTasks">0</strong></div>
+          <div class="home-stat"><span>Status jaga</span><strong id="homeShiftState">Belum mulai</strong></div>
+        </div>
+        <div class="quick-tools" id="quickTools"></div>
+        <div class="results" id="results"></div>
       </div>
-      <div class="results" id="results"></div>
       <div class="home-grid" id="homeGrid"></div>
       <p class="notice">Dokter Jaga adalah alat bantu hitung dan pengingat untuk tenaga medis, bukan pengganti penilaian klinis. Dosis dan ambang batas mengikuti pedoman internasional yang umum dipakai (AHA 2020, ESC 2023, SSC 2021, GINA 2024, WHO); verifikasi dengan formularium dan protokol setempat sebelum pemberian.</p>
       <p class="updated">Terakhir diperbarui 19 September 2026</p>
