@@ -25,10 +25,18 @@ function navHTML(mobile){
 }
 $('#nav').innerHTML = navHTML(false);
 $('#mnav').innerHTML = navHTML(true);
+let recentViews = store.get('recentViews', []);
+function trackRecentView(id){
+  if(id==='home') return;
+  recentViews = [id, ...recentViews.filter(x=>x!==id)].slice(0,5);
+  store.set('recentViews', recentViews);
+  if(typeof renderRecentTools === 'function') renderRecentTools();
+}
 function go(id, anchor){
   VIEWS.forEach(v=>{ $('#v-'+v.id).hidden = v.id!==id; });
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-current', b.dataset.view===id?'page':'false'));
   store.set('view', id);
+  trackRecentView(id);
   if(anchor){ anchor(); } else { window.scrollTo({top:0}); }
 }
 document.addEventListener('click', e=>{
@@ -45,6 +53,60 @@ $('#themeBtn').addEventListener('click', ()=>{
   root.dataset.theme = isDark ? 'light' : 'dark';
   store.set('theme', root.dataset.theme);
 });
+
+/* ---------- Quick utilities ---------- */
+let timerSeconds = 300;
+let timerRemaining = timerSeconds;
+let timerRunning = false;
+let timerInterval = null;
+function timerFmt(sec){
+  const s=Math.max(0,Math.floor(sec)), m=Math.floor(s/60), r=s%60;
+  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+function renderTimer(){
+  $('#timerDisplay').textContent=timerFmt(timerRemaining);
+  $('#timerStart').textContent=timerRunning?'Jeda':(timerRemaining===0?'Mulai lagi':'Mulai');
+  $('#timerDisplay').classList.toggle('done',timerRemaining===0);
+  document.querySelectorAll('#timerPresets .chip').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.min*60===timerRemaining&&!timerRunning)));
+}
+function setTimerMinutes(min){
+  const m=Math.max(1,Math.min(120,Math.round(min)));
+  clearInterval(timerInterval); timerInterval=null; timerRunning=false;
+  timerSeconds=m*60; timerRemaining=timerSeconds; renderTimer();
+}
+function timerTick(){
+  timerRemaining=Math.max(0,timerRemaining-1);
+  renderTimer();
+  if(timerRemaining===0){
+    clearInterval(timerInterval); timerInterval=null; timerRunning=false;
+    toast('Timer selesai');
+    try{ navigator.vibrate?.([180,80,180]); }catch(e){}
+  }
+}
+$('#timerBtn').addEventListener('click',()=>{ $('#timerModal').hidden=false; renderTimer(); setTimeout(()=>$('#timerClose').focus(),0); });
+function closeTimer(){ $('#timerModal').hidden=true; clearInterval(timerInterval); timerInterval=null; timerRunning=false; renderTimer(); }
+$('#timerClose').addEventListener('click',closeTimer);
+$('#timerModal').addEventListener('click',e=>{ if(e.target.id==='timerModal') closeTimer(); });
+$('#timerPresets').addEventListener('click',e=>{const b=e.target.closest('[data-min]');if(b)setTimerMinutes(+b.dataset.min);});
+$('#timerSet').addEventListener('click',()=>{const m=parseInt($('#timerCustom').value,10);if(m>0)setTimerMinutes(m);});
+$('#timerStart').addEventListener('click',()=>{
+  if(timerRunning){ clearInterval(timerInterval); timerInterval=null; timerRunning=false; renderTimer(); return; }
+  if(timerRemaining===0) timerRemaining=timerSeconds;
+  timerRunning=true; renderTimer(); clearInterval(timerInterval); timerInterval=setInterval(timerTick,1000);
+});
+$('#timerReset').addEventListener('click',()=>setTimerMinutes(timerSeconds/60));
+setTimerMinutes(5);
+
+/* ---------- Connection ---------- */
+function renderOnline(){
+  const online=navigator.onLine;
+  $('#onlineText').textContent=online?'Online':'Offline';
+  $('#onlineState').classList.toggle('offline',!online);
+  $('#onlineState').title=online?'Koneksi tersedia':'Mode offline — data lokal tetap dapat digunakan';
+}
+window.addEventListener('online',renderOnline);
+window.addEventListener('offline',renderOnline);
+renderOnline();
 
 /* ---------- Shift strip ---------- */
 let shiftStart = store.get('shiftStart', null);
@@ -344,18 +406,26 @@ $('#algos').innerHTML = ALGOS.map(a=>`<details class="algo" id="a-${a.id}"><summ
 /* ---------- Handover ---------- */
 let patients = store.get('patients', []);
 const TRI_ORDER = {merah:0,kuning:1,hijau:2};
+let hoFilter = 'semua';
+let hoQuery = '';
 function saveHO(){ store.set('patients', patients); renderHO(); renderHomeMeta(); }
 function renderHO(){
   const open = patients.filter(p=>!p.done).length;
   $('#openTasks').textContent = open;
   $('#hoCount').textContent = patients.length ? `${patients.length} pasien, ${open} belum selesai` : 'Belum ada pasien';
-  const sorted = [...patients].sort((a,b)=>(a.done-b.done)||(TRI_ORDER[a.tri]-TRI_ORDER[b.tri])||(a.t-b.t));
+  const q = hoQuery.trim().toLowerCase();
+  const filtered = patients.filter(p=>{
+    const filterMatch = hoFilter==='semua' || (hoFilter==='terbuka' ? !p.done : p.tri===hoFilter);
+    const hay = [p.bed,p.id,p.dx,p.todo,p.tri].join(' ').toLowerCase();
+    return filterMatch && (!q || hay.includes(q));
+  });
+  const sorted = [...filtered].sort((a,b)=>(a.done-b.done)||(TRI_ORDER[a.tri]-TRI_ORDER[b.tri])||(a.t-b.t));
   $('#hoList').innerHTML = sorted.length ? sorted.map(p=>`<div class="pt ${p.tri} ${p.done?'done':''}">
     <div class="tri" aria-label="Triase ${p.tri}"></div>
     <div class="bed">${esc(p.bed)}</div>
     <div class="body"><b>${esc(p.id)}${p.dx?' — '+esc(p.dx):''}</b>${p.todo?`<p>${esc(p.todo)}</p>`:''}</div>
     <div class="acts"><button type="button" data-done="${p.t}">${p.done?'Buka lagi':'Selesai'}</button><button type="button" data-del="${p.t}">Hapus</button></div>
-  </div>`).join('') : '<p class="muted">Tambahkan pasien pertama Anda dengan formulir di atas. Daftar diurutkan berdasarkan triase.</p>';
+  </div>`).join('') : `<p class="muted">${patients.length ? 'Tidak ada pasien yang cocok dengan filter saat ini.' : 'Tambahkan pasien pertama Anda dengan formulir di atas. Daftar diurutkan berdasarkan triase.'}</p>`;
 }
 $('#hoForm').addEventListener('submit', e=>{
   e.preventDefault();
@@ -377,8 +447,14 @@ $('#hoCopy').addEventListener('click', ()=>{
     open.map(p=>`[${p.tri.toUpperCase()}] Bed ${p.bed} — ${p.id}${p.dx?'\nDx: '+p.dx:''}${p.todo?'\nTindak lanjut: '+p.todo:''}`).join('\n\n');
   (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(()=>toast('Ringkasan disalin')).catch(()=>{ prompt('Salin ringkasan berikut:', txt); });
 });
+$('#hoSearch').addEventListener('input',e=>{hoQuery=e.target.value;renderHO();});
+$('#hoFilters').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ho-filter]'); if(!b) return;
+  hoFilter=b.dataset.hoFilter;
+  document.querySelectorAll('#hoFilters [data-ho-filter]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.hoFilter===hoFilter));
+  renderHO();
+});
 renderHO();
-renderHomeMeta();
 
 /* ---------- Pediatrics ---------- */
 const VITALS = DJ.VITALS;
@@ -490,6 +566,16 @@ function renderHomeMeta(){
 function refreshHomeMeta(){
   if(document.querySelector('#v-home:not([hidden])')) renderHomeMeta();
 }
+function renderRecentTools(){
+  const panel=$('#recentPanel'), list=$('#recentList');
+  if(!panel||!list) return;
+  if(!recentViews.length){ panel.hidden=true; list.innerHTML=''; return; }
+  panel.hidden=false;
+  list.innerHTML=recentViews.map(id=>{
+    const v=VIEWS.find(x=>x.id===id); if(!v) return '';
+    return `<button type="button" class="recent-item" data-recent="${v.id}"><svg aria-hidden="true" width="16" height="16"><use href="#${v.icon}"/></svg>${esc(v.label)}</button>`;
+  }).join('');
+}
 const QUICK_TOOLS = [
   ['Dosis obat IGD','Hitung cepat berdasarkan berat badan',()=>go('dose',()=>$('#bw').focus())],
   ['Skor klinis','NEWS2, GCS, HEART, Wells, dll.',()=>go('score')],
@@ -498,7 +584,10 @@ const QUICK_TOOLS = [
 ];
 $('#quickTools').innerHTML = QUICK_TOOLS.map((x,i)=>`<button type="button" class="quick-tool" data-quick="${i}"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></button>`).join('');
 $('#quickTools').addEventListener('click',e=>{const b=e.target.closest('[data-quick]');if(b)QUICK_TOOLS[+b.dataset.quick][2]();});
+$('#recentList').addEventListener('click',e=>{const b=e.target.closest('[data-recent]');if(b)go(b.dataset.recent);});
+$('#clearRecent').addEventListener('click',()=>{recentViews=[];store.set('recentViews',[]);renderRecentTools();toast('Riwayat dibersihkan');});
 $('#focusSearch').addEventListener('click',()=>$('#q').focus());
+renderRecentTools();
 
 function runSearch(){
   const q = $('#q').value.trim().toLowerCase();
@@ -510,6 +599,14 @@ function runSearch(){
 $('#q').addEventListener('input', runSearch);
 $('#q').addEventListener('keydown', e=>{ if(e.key==='Enter'){ const b=$('#results [data-hit]'); if(b) b.click(); } });
 $('#results').addEventListener('click', e=>{ const b=e.target.closest('[data-hit]'); if(b) INDEX[+b.dataset.hit].go(); });
+document.addEventListener('keydown',e=>{
+  const tag=(e.target?.tagName||'').toLowerCase();
+  const typing=tag==='input'||tag==='textarea'||tag==='select'||e.target?.isContentEditable;
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();go('home');$('#q').focus();return;}
+  if(e.key==='/'&&!typing){e.preventDefault();go('home');$('#q').focus();return;}
+  if(!typing && /^[1-7]$/.test(e.key)){const v=VIEWS[+e.key-1];if(v)go(v.id);}
+  if(e.key==='Escape' && !$('#timerModal').hidden) closeTimer();
+});
 const byTitle = t => () => INDEX.find(x=>x.t===t).go();
 const HOME_COLS = [
   {h:'Di IGD', items:[
@@ -540,5 +637,7 @@ const HOME_COLS = [
 ];
 $('#homeGrid').innerHTML = HOME_COLS.map((c,ci)=>`<div class="home-col"><h3>${esc(c.h)}</h3>${c.items.map((it,ii)=>`<button type="button" data-home="${ci}-${ii}">${esc(it[0])}<span>${esc(it[1])}</span></button>`).join('')}</div>`).join('');
 $('#homeGrid').addEventListener('click', e=>{ const b=e.target.closest('[data-home]'); if(!b) return; const [c,i]=b.dataset.home.split('-').map(Number); HOME_COLS[c].items[i][2](); });
+renderHomeMeta();
+renderRecentTools();
 go(store.get('view','home'));
 })();
