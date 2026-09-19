@@ -426,7 +426,7 @@ function renderHO(){
     <div class="tri" aria-label="Triase ${p.tri}"></div>
     <div class="bed">${esc(p.bed)}</div>
     <div class="body"><b>${esc(p.id)}${p.dx?' — '+esc(p.dx):''}</b>${p.todo?`<p>${esc(p.todo)}</p>`:''}</div>
-    <div class="acts"><button type="button" data-done="${p.t}">${p.done?'Buka lagi':'Selesai'}</button><button type="button" data-del="${p.t}">Hapus</button></div>
+    <div class="acts"><button type="button" data-open-patient="${p.t}">Workspace</button><button type="button" data-done="${p.t}">${p.done?'Buka lagi':'Selesai'}</button><button type="button" data-del="${p.t}">Hapus</button></div>
   </div>`).join('') : `<p class="muted">${patients.length ? 'Tidak ada pasien yang cocok dengan filter saat ini.' : 'Tambahkan pasien pertama Anda dengan formulir di atas. Daftar diurutkan berdasarkan triase.'}</p>`;
 }
 $('#hoForm').addEventListener('submit', e=>{
@@ -436,9 +436,18 @@ $('#hoForm').addEventListener('submit', e=>{
   saveHO(); toast('Pasien ditambahkan');
 });
 $('#hoList').addEventListener('click', e=>{
-  const d=e.target.closest('[data-done]'), x=e.target.closest('[data-del]');
+  const o=e.target.closest('[data-open-patient]'), d=e.target.closest('[data-done]'), x=e.target.closest('[data-del]');
+  if(o){ selectPatient(o.dataset.openPatient); return; }
   if(d){ const p=patients.find(p=>p.t==d.dataset.done); p.done=!p.done; saveHO(); }
-  if(x){ if(confirm('Hapus pasien ini dari daftar?')){ patients=patients.filter(p=>p.t!=x.dataset.del); saveHO(); } }
+  if(x){
+    if(confirm('Hapus pasien ini dari daftar?')){
+      patients=patients.filter(p=>p.t!=x.dataset.del);
+      delete patientData[x.dataset.del];
+      store.set('patientData',patientData);
+      if(String(activePatientId)===String(x.dataset.del)) activePatientId=null;
+      saveHO();
+    }
+  }
 });
 $('#hoClear').addEventListener('click', ()=>{ const n=patients.filter(p=>p.done).length; if(!n) return toast('Belum ada pasien yang selesai'); patients=patients.filter(p=>!p.done); saveHO(); toast(`${n} pasien dihapus`); });
 $('#hoCopy').addEventListener('click', ()=>{
@@ -567,7 +576,7 @@ $('#patientWorkspace').addEventListener('input',e=>{
   if(e.target.matches('[data-pv],[data-abc-note],#patientWorkingDx,#patientDDx,[id^="patientSoap"]')) persistPatientView();
 });
 $('#patientWorkspace').addEventListener('change',e=>{
-  if(e.target.matches('[data-pv],[data-abc-status],[data-abc-note,#patientWorkingDx,#patientDDx]')) persistPatientView();
+  if(e.target.matches('[data-pv],[data-abc-status],[data-abc-note],#patientWorkingDx,#patientDDx')) persistPatientView();
 });
 $('#patientPlanAdd').addEventListener('click',()=>{
   const p=activePatient(); const text=$('#patientPlanInput').value.trim(); if(!p||!text)return;
