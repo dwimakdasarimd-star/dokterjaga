@@ -9,7 +9,8 @@ const CORE=[
   './js/data/vaso.js',
   './js/data/algorithms.js',
   './js/data/vitals.js',
-  './manifest.json'
+  './manifest.json',
+  './icon.svg'
 ];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));
