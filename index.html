@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dokter Jaga — alat bantu dokter IGD & poliklinik</title>
-<meta name="description" content="Dosis obat IGD, skor klinis, kalkulator, analisis gas darah, pediatri, algoritma kegawatdaruratan, dan catatan jaga untuk dokter.">
+<meta name="description" content="Workspace klinis untuk dokter jaga: dosis, skor, kalkulator, algoritma, pediatri, handover, SOAP, dan timer.">
+<meta name="theme-color" content="#1C6E73">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +23,8 @@
   <symbol id="i-ho" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7"/></symbol>
   <symbol id="i-peds" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><path d="M12 9v6M8 21l4-6 4 6M7 12h10"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6M12 2v3"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10.5 10.5 0 0 1 14 0M8.5 15.5a6 6 0 0 1 7 0"/><path d="M12 19h.01"/></symbol>
 </svg>
 
 <div class="app">
@@ -44,7 +48,11 @@
         <div><span>Lama jaga</span><strong id="elapsed">belum mulai</strong></div>
         <div><span>Tugas terbuka</span><strong id="openTasks">0</strong></div>
       </div>
-      <button class="btn-shift" id="shiftBtn" type="button">Mulai jaga</button>
+      <div class="strip-actions">
+        <button class="strip-tool" id="onlineState" type="button" aria-label="Status koneksi"><span class="status-dot"></span><span id="onlineText">Online</span></button>
+        <button class="strip-tool" id="timerBtn" type="button"><svg aria-hidden="true"><use href="#i-timer"/></svg><span>Timer</span></button>
+        <button class="btn-shift" id="shiftBtn" type="button">Mulai jaga</button>
+      </div>
     </header>
 
     <!-- HOME -->
@@ -66,6 +74,10 @@
           <div class="home-stat"><span>Status jaga</span><strong id="homeShiftState">Belum mulai</strong></div>
         </div>
         <div class="quick-tools" id="quickTools"></div>
+        <div class="recent-panel" id="recentPanel" hidden>
+          <div class="recent-head"><div><div class="page-kicker">Riwayat</div><h3>Terakhir dibuka</h3></div><button class="btn ghost" type="button" id="clearRecent">Bersihkan</button></div>
+          <div class="recent-list" id="recentList"></div>
+        </div>
         <div class="results" id="results"></div>
       </div>
       <div class="home-grid" id="homeGrid"></div>
@@ -326,6 +338,16 @@
           <button class="btn ghost" type="button" id="hoClear">Hapus yang selesai</button>
         </div>
       </div>
+      <div class="handover-tools">
+        <div class="search-inline"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="hoSearch" type="search" placeholder="Cari bed, inisial, diagnosis, tindak lanjut…" autocomplete="off" aria-label="Cari pasien"></div>
+        <div class="seg" id="hoFilters" aria-label="Filter triase">
+          <button type="button" data-ho-filter="semua" aria-pressed="true">Semua</button>
+          <button type="button" data-ho-filter="merah" aria-pressed="false">Merah</button>
+          <button type="button" data-ho-filter="kuning" aria-pressed="false">Kuning</button>
+          <button type="button" data-ho-filter="hijau" aria-pressed="false">Hijau</button>
+          <button type="button" data-ho-filter="terbuka" aria-pressed="false">Belum selesai</button>
+        </div>
+      </div>
       <div class="ho-list" id="hoList"></div>
 
       <h2 class="sub-h" id="c-soap">Catatan SOAP</h2>
@@ -356,11 +378,36 @@
 <nav class="mnav" id="mnav" aria-label="Menu utama"></nav>
 <div class="toast" id="toast" role="status"></div>
 
+<div class="modal-backdrop" id="timerModal" hidden>
+  <section class="modal timer-modal" role="dialog" aria-modal="true" aria-labelledby="timerTitle">
+    <div class="modal-head"><div><div class="page-kicker">Quick timer</div><h2 id="timerTitle">Timer klinis</h2></div><button class="modal-close" id="timerClose" type="button" aria-label="Tutup">×</button></div>
+    <div class="timer-display" id="timerDisplay">05:00</div>
+    <div class="timer-presets" id="timerPresets">
+      <button type="button" class="chip" data-min="1">1 menit</button>
+      <button type="button" class="chip" data-min="3">3 menit</button>
+      <button type="button" class="chip" data-min="5" aria-pressed="true">5 menit</button>
+      <button type="button" class="chip" data-min="10">10 menit</button>
+    </div>
+    <div class="row timer-custom">
+      <label class="f">Menit<input id="timerCustom" type="number" min="1" max="120" step="1" inputmode="numeric" placeholder="Custom"></label>
+      <button class="btn ghost" id="timerSet" type="button">Atur</button>
+    </div>
+    <div class="timer-actions">
+      <button class="btn" id="timerStart" type="button">Mulai</button>
+      <button class="btn ghost" id="timerReset" type="button">Reset</button>
+    </div>
+    <p class="ref">Timer berjalan di perangkat ini dan tidak mengirim data ke server.</p>
+  </section>
+</div>
+
 <script src="js/data/drugs.js"></script>
 <script src="js/data/scores.js"></script>
 <script src="js/data/vaso.js"></script>
 <script src="js/data/algorithms.js"></script>
 <script src="js/data/vitals.js"></script>
 <script src="js/app.js"></script>
+<script>
+  if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
+</script>
 </body>
 </html>
