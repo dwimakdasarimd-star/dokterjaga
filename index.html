@@ -179,7 +179,12 @@
 
           <section class="patient-section panel">
             <div class="section-head-line"><div><div class="page-kicker">Clinical notes</div><h3>SOAP singkat</h3></div><button class="text-link" type="button" id="patientOpenSoap">Buka editor SOAP →</button></div>
-            <div class="soap-preview" id="patientSoapPreview"></div>
+            <div class="patient-soap-grid">
+              <label class="f"><b>S</b><textarea id="patientSoapS" maxlength="1200" placeholder="Keluhan / anamnesis singkat…"></textarea></label>
+              <label class="f"><b>O</b><textarea id="patientSoapO" maxlength="1200" placeholder="Pemeriksaan fisik / penunjang…"></textarea></label>
+              <label class="f"><b>A</b><textarea id="patientSoapA" maxlength="800" placeholder="Assessment / diagnosis…"></textarea></label>
+              <label class="f"><b>P</b><textarea id="patientSoapP" maxlength="1200" placeholder="Plan / terapi / monitoring…"></textarea></label>
+            </div>
           </section>
         </section>
 
