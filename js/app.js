@@ -33,7 +33,7 @@ function go(id, anchor){
 }
 document.addEventListener('click', e=>{
   const b = e.target.closest('[data-view]');
-  if(b){ go(b.dataset.view); }
+  if(b){ go(b.dataset.view); refreshHomeMeta(); }
 });
 
 /* ---------- Theme ---------- */
@@ -344,7 +344,7 @@ $('#algos').innerHTML = ALGOS.map(a=>`<details class="algo" id="a-${a.id}"><summ
 /* ---------- Handover ---------- */
 let patients = store.get('patients', []);
 const TRI_ORDER = {merah:0,kuning:1,hijau:2};
-function saveHO(){ store.set('patients', patients); renderHO(); }
+function saveHO(){ store.set('patients', patients); renderHO(); renderHomeMeta(); }
 function renderHO(){
   const open = patients.filter(p=>!p.done).length;
   $('#openTasks').textContent = open;
@@ -486,6 +486,9 @@ function renderHomeMeta(){
   $('#toolCount').textContent = tools;
   $('#homeOpenTasks').textContent = open;
   $('#homeShiftState').textContent = shiftStart ? 'Sedang jaga' : 'Belum mulai';
+}
+function refreshHomeMeta(){
+  if(document.querySelector('#v-home:not([hidden])')) renderHomeMeta();
 }
 const QUICK_TOOLS = [
   ['Dosis obat IGD','Hitung cepat berdasarkan berat badan',()=>go('dose',()=>$('#bw').focus())],
