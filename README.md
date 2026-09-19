@@ -11,7 +11,8 @@ Situs live: https://dokter-jaga.vercel.app
 - **Kalkulator**: analisis gas darah, infus vasoaktif, IMT, eGFR CKD-EPI 2021, Cockcroft–Gault, koreksi elektrolit, defisit air bebas, QTc, usia kehamilan, trombolisis stroke, konversi satuan, MAP, Parkland, Holliday–Segar, tetesan infus.
 - **Pediatri**: kartu resusitasi dari usia, tanda vital normal, rehidrasi diare WHO.
 - **Algoritma**: henti jantung, anafilaksis, status epileptikus, sepsis, hipoglikemia, SKA, stroke, hiperkalemia, asma.
-- **Catatan jaga**: daftar serah terima pasien per triase dan penyusun catatan SOAP. Data hanya tersimpan di peramban pengguna (localStorage), tidak dikirim ke server.
+- **Catatan jaga**: daftar serah terima pasien dengan pencarian dan filter triase, serta penyusun catatan SOAP. Data hanya tersimpan di peramban pengguna (localStorage), tidak dikirim ke server.
+- **Produktivitas jaga**: quick timer 1–120 menit, riwayat menu terakhir dibuka, shortcut keyboard, indikator online/offline, dan dukungan instalasi PWA/offline.
 
 ## Struktur
 
@@ -28,7 +29,7 @@ tests/smoke.test.js   Uji otomatis dasar
 AGENTS.md             Panduan untuk asisten AI yang mengedit repo ini
 ```
 
-Situs ini statis: tidak ada proses build, tidak ada server, tidak ada dependensi saat runtime.
+Situs ini statis: tidak ada proses build, tidak ada server, tidak ada dependensi aplikasi saat runtime. Service worker digunakan untuk caching aset lokal agar aplikasi dapat dibuka kembali saat offline.
 
 ## Menjalankan secara lokal
 
