@@ -484,6 +484,14 @@ function defaultPatientDraft(p){
     workingDx:p?.dx||'',
     ddx:'',
     plan:p?.todo?[{id:Date.now(),text:p.todo,done:false}]:[],
+    reasoning:{
+      problem:'',
+      flags:{airway:false,breathing:false,circulation:false,neurologic:false,sepsis:false,bleeding:false,anaphylaxis:false,pregnancy:false},
+      ddx:[],
+      supporting:'',
+      against:'',
+      workup:''
+    },
     soap:{s:'',o:'',a:p?.dx||'',p:''},
     timeline:p?.todo?[{id:Date.now()+1,at:Date.now(),text:'Tugas handover: '+p.todo}]:[]
   };
@@ -547,6 +555,25 @@ function renderPatientWorkspace(){
 
   $('#patientWorkingDx').value=d.workingDx||'';
   $('#patientDDx').value=d.ddx||'';
+
+  const flags=[
+    ['airway','Airway tidak aman / ancaman obstruksi'],
+    ['breathing','Distres napas / hipoksemia'],
+    ['circulation','Syok / perfusi buruk / instabil hemodinamik'],
+    ['neurologic','Penurunan kesadaran / defisit neurologis akut'],
+    ['sepsis','Kecurigaan infeksi berat / perburukan sistemik'],
+    ['bleeding','Perdarahan aktif / risiko perdarahan bermakna'],
+    ['anaphylaxis','Reaksi alergi berat / anafilaksis'],
+    ['pregnancy','Kehamilan / kondisi obstetri yang relevan']
+  ];
+  const rr=d.reasoning||defaultPatientDraft(p).reasoning;
+  $('#reasoningProblem').value=rr.problem||'';
+  $('#reasoningFlags').innerHTML=flags.map(([id,label])=>`<label class="flag-item ${rr.flags[id]?'checked':''}"><input type="checkbox" data-rflag="${id}" ${rr.flags[id]?'checked':''}><span>${esc(label)}</span></label>`).join('');
+  $('#reasoningList').innerHTML=rr.ddx.length?rr.ddx.map((x,i)=>`<div class="reasoning-item"><span class="rank">${i+1}</span><div><b>${esc(x.text)}</b><small>${x.note?esc(x.note):'Hipotesis belum diberi alasan.'}</small></div><button type="button" data-rddx-del="${x.id}" aria-label="Hapus hipotesis">×</button></div>`).join(''):'<div class="timeline-empty">Belum ada hipotesis. Tambahkan diagnosis banding satu per satu.</div>';
+  $('#reasoningFor').value=rr.supporting||'';
+  $('#reasoningAgainst').value=rr.against||'';
+  $('#reasoningWorkup').value=rr.workup||'';
+
   $('#patientPlan').innerHTML=d.plan.length?d.plan.map(x=>`<div class="plan-item ${x.done?'done':''}"><input type="checkbox" data-plan-check="${x.id}" ${x.done?'checked':''}><span>${esc(x.text)}</span><button type="button" data-plan-del="${x.id}" aria-label="Hapus rencana">×</button></div>`).join(''):'<div class="timeline-empty">Belum ada rencana. Tambahkan tugas pertama untuk pasien ini.</div>';
 
   ['S','O','A','P'].forEach(k=>{ const id='patientSoap'+k; if($('#'+id)) $('#'+id).value=d.soap[k.toLowerCase()]||''; });
@@ -565,6 +592,14 @@ function persistPatientView(){
   });
   d.workingDx=$('#patientWorkingDx').value.trim();
   d.ddx=$('#patientDDx').value.trim();
+  d.reasoning=d.reasoning||defaultPatientDraft(p).reasoning;
+  d.reasoning.problem=$('#reasoningProblem').value.trim();
+  ['airway','breathing','circulation','neurologic','sepsis','bleeding','anaphylaxis','pregnancy'].forEach(k=>{
+    const el=document.querySelector(`[data-rflag="${k}"]`); if(el) d.reasoning.flags[k]=el.checked;
+  });
+  d.reasoning.supporting=$('#reasoningFor').value.trim();
+  d.reasoning.against=$('#reasoningAgainst').value.trim();
+  d.reasoning.workup=$('#reasoningWorkup').value.trim();
   d.soap={s:$('#patientSoapS').value,o:$('#patientSoapO').value,a:$('#patientSoapA').value,p:$('#patientSoapP').value};
   savePatientDraft(p,d);
   if(d.workingDx!==p.dx){p.dx=d.workingDx;store.set('patients',patients);}
@@ -573,11 +608,29 @@ function persistPatientView(){
   renderHO();
 }
 $('#patientWorkspace').addEventListener('input',e=>{
-  if(e.target.matches('[data-pv],[data-abc-note],#patientWorkingDx,#patientDDx,[id^="patientSoap"]')) persistPatientView();
+  if(e.target.matches('[data-pv],[data-abc-note],#patientWorkingDx,#patientDDx,#reasoningProblem,#reasoningFor,#reasoningAgainst,#reasoningWorkup,[id^="patientSoap"]')) persistPatientView();
 });
 $('#patientWorkspace').addEventListener('change',e=>{
-  if(e.target.matches('[data-pv],[data-abc-status],[data-abc-note],#patientWorkingDx,#patientDDx')) persistPatientView();
+  if(e.target.matches('[data-pv],[data-abc-status],[data-abc-note],#patientWorkingDx,#patientDDx,[data-rflag]')) persistPatientView();
 });
+$('#reasoningDxAdd').addEventListener('click',()=>{
+  const p=activePatient(),input=$('#reasoningDxInput'); const text=input.value.trim(); if(!p||!text)return;
+  const d=patientDraft(p); d.reasoning=d.reasoning||defaultPatientDraft(p).reasoning;
+  const now=Date.now(); d.reasoning.ddx.push({id:now,text,note:''});
+  d.timeline.push({id:now+1,at:now,text:'Diagnosis banding ditambahkan: '+text});
+  input.value=''; savePatientDraft(p,d); renderPatientWorkspace();
+});
+$('#reasoningDxInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#reasoningDxAdd').click();}});
+$('#reasoningList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-rddx-del]'); if(!b)return;
+  const p=activePatient(),d=patientDraft(p); d.reasoning=d.reasoning||defaultPatientDraft(p).reasoning;
+  const idx=d.reasoning.ddx.findIndex(x=>String(x.id)===String(b.dataset.rddxDel)); if(idx<0)return;
+  const text=d.reasoning.ddx[idx].text; d.reasoning.ddx.splice(idx,1);
+  d.timeline.push({id:Date.now(),at:Date.now(),text:'Diagnosis banding dihapus: '+text});
+  savePatientDraft(p,d); renderPatientWorkspace();
+});
+$('#openReasoningTool').addEventListener('click',()=>{ $('#reasoningProblem').focus(); document.querySelector('.reasoning-board')?.scrollIntoView({behavior:'smooth',block:'start'}); });
+
 $('#patientPlanAdd').addEventListener('click',()=>{
   const p=activePatient(); const text=$('#patientPlanInput').value.trim(); if(!p||!text)return;
   const d=patientDraft(p); d.plan.push({id:Date.now(),text,done:false});
