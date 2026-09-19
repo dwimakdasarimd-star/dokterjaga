@@ -593,3 +593,9 @@ details.algo summary{padding:15px 16px}
   .patient-two-col{grid-template-columns:1fr}
   .soap-preview{grid-template-columns:1fr}
 }
+
+.patient-soap-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.patient-soap-grid .f{min-width:0}
+.patient-soap-grid .f b{font-size:.7rem;color:var(--dj-teal);margin-bottom:4px}
+.patient-soap-grid textarea{min-height:100px;resize:vertical}
+@media(max-width:650px){.patient-soap-grid{grid-template-columns:1fr}}
