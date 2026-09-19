@@ -118,7 +118,95 @@
     </section>
 
     <!-- DOSE -->
-    <section class="view" id="v-dose" hidden>
+    <!-- PATIENT WORKSPACE -->
+  <section class="view" id="v-patient" hidden>
+    <div class="workspace-header patient-top">
+      <div>
+        <button class="back-link" type="button" data-view="ho">← Kembali ke pasien</button>
+        <div class="page-kicker">Patient workspace</div>
+        <h2 id="patientTitle">Pilih pasien</h2>
+        <p class="lede" id="patientSub">Pilih pasien dari dashboard atau daftar handover untuk membuka ruang kerja klinis.</p>
+      </div>
+      <div class="patient-top-actions">
+        <span class="tri-badge" id="patientTriage">—</span>
+        <button class="btn ghost" type="button" id="patientFinish">Tandai selesai</button>
+      </div>
+    </div>
+
+    <div id="patientEmpty" class="patient-empty panel">
+      <div class="empty-icon"><svg aria-hidden="true"><use href="#i-patient"/></svg></div>
+      <h3>Belum ada pasien dipilih</h3>
+      <p class="muted">Buka <b>Pasien & handover</b>, lalu pilih salah satu pasien untuk melihat workspace ini.</p>
+      <button class="btn" type="button" data-view="ho">Buka daftar pasien</button>
+    </div>
+
+    <div id="patientWorkspace" hidden>
+      <div class="patient-alert" id="patientAlert"></div>
+      <div class="patient-summary">
+        <div class="patient-id-card">
+          <span class="avatar" id="patientAvatar">A</span>
+          <div><strong id="patientName">Tn. A</strong><small id="patientMeta">54 th · Bed 03A</small></div>
+        </div>
+        <div class="summary-metric"><span>Diagnosis kerja</span><strong id="patientDx">—</strong></div>
+        <div class="summary-metric"><span>Tugas terbuka</span><strong id="patientTaskState">—</strong></div>
+        <div class="summary-metric"><span>Update terakhir</span><strong id="patientUpdated">—</strong></div>
+      </div>
+
+      <div class="patient-grid">
+        <section class="patient-main">
+          <div class="patient-section panel">
+            <div class="section-head-line"><div><div class="page-kicker">Vitals & monitoring</div><h3>Tanda vital</h3></div><span class="save-state" id="patientSaveState">Tersimpan lokal</span></div>
+            <div class="vitals-editor" id="patientVitals"></div>
+          </div>
+
+          <div class="patient-section panel">
+            <div class="section-head-line"><div><div class="page-kicker">Primary assessment</div><h3>ABCDE</h3></div><span class="muted small">Catatan cepat bedside</span></div>
+            <div class="abcde-grid" id="patientABCDE"></div>
+          </div>
+
+          <div class="patient-two-col">
+            <section class="patient-section panel">
+              <div class="section-head-line"><div><div class="page-kicker">Assessment</div><h3>Diagnosis</h3></div></div>
+              <label class="f patient-field">Diagnosis kerja<input id="patientWorkingDx" maxlength="180" placeholder="Diagnosis utama yang sedang dipertimbangkan"></label>
+              <label class="f patient-field">Diagnosis banding<textarea id="patientDDx" maxlength="700" placeholder="Satu diagnosis per baris"></textarea></label>
+            </section>
+            <section class="patient-section panel">
+              <div class="section-head-line"><div><div class="page-kicker">Plan</div><h3>Rencana tata laksana</h3></div></div>
+              <div class="plan-list" id="patientPlan"></div>
+              <div class="plan-add"><input id="patientPlanInput" maxlength="180" placeholder="Tambah tugas / rencana…"><button class="btn" type="button" id="patientPlanAdd">Tambah</button></div>
+            </section>
+          </div>
+
+          <section class="patient-section panel">
+            <div class="section-head-line"><div><div class="page-kicker">Clinical notes</div><h3>SOAP singkat</h3></div><button class="text-link" type="button" id="patientOpenSoap">Buka editor SOAP →</button></div>
+            <div class="soap-preview" id="patientSoapPreview"></div>
+          </section>
+        </section>
+
+        <aside class="patient-side">
+          <section class="patient-section panel">
+            <div class="section-head-line"><div><div class="page-kicker">Timeline</div><h3>Aktivitas pasien</h3></div></div>
+            <form class="timeline-form" id="patientTimelineForm">
+              <input id="patientTimelineInput" maxlength="220" placeholder="Catat perubahan / tindakan…">
+              <button class="btn" type="submit">Catat</button>
+            </form>
+            <div class="timeline" id="patientTimeline"></div>
+          </section>
+
+          <section class="patient-section panel patient-tools-card">
+            <div class="page-kicker">Tools terkait</div>
+            <h3>Quick clinical tools</h3>
+            <button type="button" class="related-tool" data-view="dose"><span>Dosis obat</span><small>Hitung berbasis BB</small></button>
+            <button type="button" class="related-tool" data-view="score"><span>Skor klinis</span><small>NEWS2 · GCS · HEART</small></button>
+            <button type="button" class="related-tool" data-view="calc"><span>Kalkulator</span><small>AGD · eGFR · MAP · vasoaktif</small></button>
+            <button type="button" class="related-tool" data-view="algo"><span>Emergency</span><small>Protokol kegawatdaruratan</small></button>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-dose" hidden>
       <div class="dose-head">
         <label class="f">Berat badan (kg)
           <input id="bw" class="big-in num" type="number" inputmode="decimal" min="0.5" max="200" step="0.1" placeholder="0">
