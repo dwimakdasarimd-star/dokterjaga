@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dokter Jaga — alat bantu dokter IGD & poliklinik</title>
+<meta name="description" content="Dosis obat IGD, skor klinis, kalkulator, analisis gas darah, pediatri, algoritma kegawatdaruratan, dan catatan jaga untuk dokter.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-dose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2l4 4M17 7l3-3M19 9 8.7 19.3a1 1 0 0 1-1.4 0l-2.6-2.6a1 1 0 0 1 0-1.4L15 5M9 11l4 4M5 19l-3 3"/></symbol>
+  <symbol id="i-score" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></symbol>
+  <symbol id="i-calc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15v4M8 19h4"/></symbol>
+  <symbol id="i-algo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-ho" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7"/></symbol>
+  <symbol id="i-peds" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><path d="M12 9v6M8 21l4-6 4 6M7 12h10"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="8" fill="var(--scrub)"/><path d="M5 18h6l3-7 5 13 3-6h7" fill="none" stroke="var(--scrub-ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <b>Dokter Jaga</b>
+    </div>
+    <nav class="nav" id="nav" aria-label="Menu utama"></nav>
+    <div class="side-foot">
+      <button class="theme-btn" id="themeBtn" type="button">Ganti tema</button>
+      <p>Alat bantu klinis. Selalu cocokkan dengan PPK dan protokol rumah sakit Anda.</p>
+    </div>
+  </aside>
+
+  <main>
+    <header class="strip" aria-label="Status jaga">
+      <div class="clock" id="clock" aria-live="off">--:--<small>:--</small></div>
+      <div class="strip-meta">
+        <div><span>Sif</span><strong id="shiftName">—</strong></div>
+        <div><span>Lama jaga</span><strong id="elapsed">belum mulai</strong></div>
+        <div><span>Tugas terbuka</span><strong id="openTasks">0</strong></div>
+      </div>
+      <button class="btn-shift" id="shiftBtn" type="button">Mulai jaga</button>
+    </header>
+
+    <!-- HOME -->
+    <section class="view" id="v-home">
+      <h2>Apa yang Anda butuhkan sekarang?</h2>
+      <p class="lede">Dosis berbasis berat badan, skor klinis, kalkulator, pediatri, algoritma kegawatdaruratan, dan catatan jaga dalam satu tempat.</p>
+      <div class="search">
+        <svg aria-hidden="true"><use href="#i-search"/></svg>
+        <input id="q" type="search" placeholder="Cari: GCS, adenosin, eGFR, anafilaksis…" autocomplete="off" aria-label="Cari alat">
+      </div>
+      <div class="results" id="results"></div>
+      <div class="home-grid" id="homeGrid"></div>
+      <p class="notice">Dokter Jaga adalah alat bantu hitung dan pengingat untuk tenaga medis, bukan pengganti penilaian klinis. Dosis dan ambang batas mengikuti pedoman internasional yang umum dipakai (AHA 2020, ESC 2023, SSC 2021, GINA 2024, WHO); verifikasi dengan formularium dan protokol setempat sebelum pemberian.</p>
+      <p class="updated">Terakhir diperbarui 19 September 2026</p>
+    </section>
+
+    <!-- DOSE -->
+    <section class="view" id="v-dose" hidden>
+      <div class="dose-head">
+        <label class="f">Berat badan (kg)
+          <input id="bw" class="big-in num" type="number" inputmode="decimal" min="0.5" max="200" step="0.1" placeholder="0">
+        </label>
+        <div>
+          <h2>Dosis obat IGD</h2>
+          <p class="fluid" id="fluid">Masukkan berat badan untuk menghitung dosis, volume, dan cairan rumatan.</p>
+        </div>
+      </div>
+      <div class="filters" id="doseFilters"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Obat & indikasi</th><th>Dosis/kg</th><th>Dosis</th><th>Sediaan (mg/mL)</th><th>Volume</th><th>Catatan</th></tr></thead>
+          <tbody id="doseBody"></tbody>
+        </table>
+      </div>
+      <p class="ref">Batas maksimal (label kuning) muncul saat dosis per kg melampaui dosis dewasa. Ubah kolom sediaan bila konsentrasi di tempat Anda berbeda.</p>
+    </section>
+
+    <!-- SCORES -->
+    <section class="view" id="v-score" hidden>
+      <h2>Skor klinis</h2>
+      <p class="lede">Centang kriteria yang terpenuhi; skor dan interpretasi diperbarui langsung.</p>
+      <div class="score-layout">
+        <div class="score-list" id="scoreList" role="tablist" aria-label="Daftar skor"></div>
+        <div class="panel" id="scorePanel"></div>
+      </div>
+    </section>
+
+    <!-- CALC -->
+    <section class="view" id="v-calc" hidden>
+      <h2>Kalkulator klinis</h2>
+      <p class="lede">Perhitungan rutin untuk pasien IGD dan poliklinik.</p>
+      <div class="calc-grid">
+        <div class="panel calc" id="c-bmi">
+          <h3>Indeks massa tubuh</h3>
+          <p class="muted">Klasifikasi Asia-Pasifik (WHO 2000)</p>
+          <div class="row">
+            <label class="f">Berat (kg)<input data-c="bmi" id="bmiW" type="number" inputmode="decimal"></label>
+            <label class="f">Tinggi (cm)<input data-c="bmi" id="bmiH" type="number" inputmode="decimal"></label>
+          </div>
+          <div class="out" id="bmiOut"></div>
+        </div>
+        <div class="panel calc" id="c-egfr">
+          <h3>eGFR CKD-EPI 2021</h3>
+          <p class="muted">Tanpa koefisien ras</p>
+          <div class="row">
+            <label class="f">Kreatinin (mg/dL)<input data-c="egfr" id="gfrCr" type="number" inputmode="decimal" step="0.01"></label>
+            <label class="f">Usia (th)<input data-c="egfr" id="gfrAge" type="number" inputmode="numeric"></label>
+            <label class="f">Jenis kelamin<select data-c="egfr" id="gfrSex"><option value="m">Laki-laki</option><option value="f">Perempuan</option></select></label>
+          </div>
+          <div class="out" id="gfrOut"></div>
+        </div>
+        <div class="panel calc" id="c-map">
+          <h3>Tekanan arteri rerata</h3>
+          <p class="muted">MAP = (sistolik + 2 × diastolik) / 3</p>
+          <div class="row">
+            <label class="f">Sistolik<input data-c="map" id="mapS" type="number" inputmode="numeric"></label>
+            <label class="f">Diastolik<input data-c="map" id="mapD" type="number" inputmode="numeric"></label>
+          </div>
+          <div class="out" id="mapOut"></div>
+        </div>
+        <div class="panel calc" id="c-parkland">
+          <h3>Resusitasi luka bakar</h3>
+          <p class="muted">Parkland: 4 mL × kg × %LPTT (Ringer laktat)</p>
+          <div class="row">
+            <label class="f">Berat (kg)<input data-c="park" id="pkW" type="number" inputmode="decimal"></label>
+            <label class="f">% LPTT (derajat II–III)<input data-c="park" id="pkT" type="number" inputmode="decimal"></label>
+          </div>
+          <div class="out" id="pkOut"></div>
+        </div>
+        <div class="panel calc" id="c-hs">
+          <h3>Cairan rumatan</h3>
+          <p class="muted">Holliday–Segar (4-2-1)</p>
+          <div class="row">
+            <label class="f">Berat (kg)<input data-c="hs" id="hsW" type="number" inputmode="decimal"></label>
+          </div>
+          <div class="out" id="hsOut"></div>
+        </div>
+        <div class="panel calc" id="c-drip">
+          <h3>Tetesan infus</h3>
+          <p class="muted">Tetes/menit = volume × faktor tetes / waktu (menit)</p>
+          <div class="row">
+            <label class="f">Volume (mL)<input data-c="drip" id="drV" type="number" inputmode="numeric"></label>
+            <label class="f">Waktu (jam)<input data-c="drip" id="drT" type="number" inputmode="decimal"></label>
+            <label class="f">Set infus<select data-c="drip" id="drF"><option value="20">Makro 20 tts/mL</option><option value="15">Makro 15 tts/mL</option><option value="60">Mikro 60 tts/mL</option></select></label>
+          </div>
+          <div class="out" id="drOut"></div>
+        </div>
+        <div class="panel calc wide" id="c-agd">
+          <h3>Analisis gas darah</h3>
+          <p class="muted">Gangguan primer, kompensasi (Winter), anion gap, dan rasio delta</p>
+          <div class="row">
+            <label class="f">pH<input data-c="agd" id="agPh" type="number" inputmode="decimal" step="0.01" placeholder="7,40"></label>
+            <label class="f">PaCO₂ (mmHg)<input data-c="agd" id="agCo2" type="number" inputmode="decimal" placeholder="40"></label>
+            <label class="f">HCO₃⁻ (mEq/L)<input data-c="agd" id="agHco3" type="number" inputmode="decimal" placeholder="24"></label>
+            <label class="f">Na⁺ (opsional)<input data-c="agd" id="agNa" type="number" inputmode="decimal"></label>
+            <label class="f">Cl⁻ (opsional)<input data-c="agd" id="agCl" type="number" inputmode="decimal"></label>
+            <label class="f">Albumin g/dL (opsional)<input data-c="agd" id="agAlb" type="number" inputmode="decimal" step="0.1"></label>
+            <label class="f">Onset gangguan respiratorik<select data-c="agd" id="agChr"><option value="a">Akut</option><option value="k">Kronik</option></select></label>
+          </div>
+          <div class="out" id="agOut"></div>
+        </div>
+        <div class="panel calc" id="c-vaso">
+          <h3>Infus obat vasoaktif</h3>
+          <p class="muted">Konversi dosis ke laju syringe pump</p>
+          <div class="preset" id="vasoPreset"></div>
+          <div class="row">
+            <label class="f">Dosis<input data-c="vaso" id="vsDose" type="number" inputmode="decimal" step="any"></label>
+            <label class="f">Satuan<select data-c="vaso" id="vsUnit"><option value="kgmin">mcg/kg/menit</option><option value="min">mcg/menit</option></select></label>
+            <label class="f">Berat (kg)<input data-c="vaso" id="vsW" type="number" inputmode="decimal"></label>
+            <label class="f">Obat (mg)<input data-c="vaso" id="vsMg" type="number" inputmode="decimal" step="any"></label>
+            <label class="f">Dalam (mL)<input data-c="vaso" id="vsMl" type="number" inputmode="decimal"></label>
+          </div>
+          <div class="out" id="vsOut"></div>
+        </div>
+        <div class="panel calc" id="c-crcl">
+          <h3>Klirens kreatinin</h3>
+          <p class="muted">Cockcroft–Gault, untuk penyesuaian dosis obat</p>
+          <div class="row">
+            <label class="f">Usia (th)<input data-c="crcl" id="ccAge" type="number" inputmode="numeric"></label>
+            <label class="f">Berat (kg)<input data-c="crcl" id="ccW" type="number" inputmode="decimal"></label>
+            <label class="f">Kreatinin (mg/dL)<input data-c="crcl" id="ccCr" type="number" inputmode="decimal" step="0.01"></label>
+            <label class="f">Jenis kelamin<select data-c="crcl" id="ccSex"><option value="m">Laki-laki</option><option value="f">Perempuan</option></select></label>
+          </div>
+          <div class="out" id="ccOut"></div>
+        </div>
+        <div class="panel calc" id="c-elec">
+          <h3>Koreksi elektrolit</h3>
+          <p class="muted">Natrium, kalsium, dan anion gap terkoreksi</p>
+          <div class="row">
+            <label class="f">Na⁺ (mEq/L)<input data-c="elec" id="elNa" type="number" inputmode="decimal"></label>
+            <label class="f">Glukosa (mg/dL)<input data-c="elec" id="elGlu" type="number" inputmode="decimal"></label>
+            <label class="f">Ca total (mg/dL)<input data-c="elec" id="elCa" type="number" inputmode="decimal" step="0.1"></label>
+            <label class="f">Albumin (g/dL)<input data-c="elec" id="elAlb" type="number" inputmode="decimal" step="0.1"></label>
+            <label class="f">Cl⁻ (mEq/L)<input data-c="elec" id="elCl" type="number" inputmode="decimal"></label>
+            <label class="f">HCO₃⁻ (mEq/L)<input data-c="elec" id="elHco3" type="number" inputmode="decimal"></label>
+          </div>
+          <div class="out" id="elOut"></div>
+        </div>
+        <div class="panel calc" id="c-fwd">
+          <h3>Defisit air bebas</h3>
+          <p class="muted">Untuk hipernatremia</p>
+          <div class="row">
+            <label class="f">Berat (kg)<input data-c="fwd" id="fwW" type="number" inputmode="decimal"></label>
+            <label class="f">Na⁺ (mEq/L)<input data-c="fwd" id="fwNa" type="number" inputmode="decimal"></label>
+            <label class="f">Kelompok<select data-c="fwd" id="fwF"><option value="0.6">Anak / pria dewasa</option><option value="0.5">Wanita dewasa / pria lansia</option><option value="0.45">Wanita lansia</option></select></label>
+          </div>
+          <div class="out" id="fwOut"></div>
+        </div>
+        <div class="panel calc" id="c-qtc">
+          <h3>QT terkoreksi</h3>
+          <p class="muted">Bazett dan Fridericia</p>
+          <div class="row">
+            <label class="f">QT (ms)<input data-c="qtc" id="qtQt" type="number" inputmode="numeric"></label>
+            <label class="f">Laju jantung (×/menit)<input data-c="qtc" id="qtHr" type="number" inputmode="numeric"></label>
+          </div>
+          <div class="out" id="qtOut"></div>
+        </div>
+        <div class="panel calc" id="c-preg">
+          <h3>Usia kehamilan</h3>
+          <p class="muted">Dari HPHT, taksiran persalinan (Naegele)</p>
+          <div class="row">
+            <label class="f">HPHT<input data-c="preg" id="pgLmp" type="date"></label>
+          </div>
+          <div class="out" id="pgOut"></div>
+        </div>
+        <div class="panel calc" id="c-tpa">
+          <h3>Trombolisis stroke iskemik</h3>
+          <p class="muted">Dalam 4,5 jam dari onset atau terakhir terlihat normal</p>
+          <div class="row">
+            <label class="f">Berat (kg)<input data-c="tpa" id="tpW" type="number" inputmode="decimal"></label>
+            <label class="f">Obat<select data-c="tpa" id="tpDrug"><option value="alt">Alteplase</option><option value="tnk">Tenekteplase</option></select></label>
+          </div>
+          <div class="out" id="tpOut"></div>
+        </div>
+        <div class="panel calc" id="c-conv">
+          <h3>Konversi satuan lab</h3>
+          <p class="muted">mg/dL ↔ satuan SI</p>
+          <div class="row">
+            <label class="f">Nilai<input data-c="conv" id="cvV" type="number" inputmode="decimal" step="any"></label>
+            <label class="f">Parameter<select data-c="conv" id="cvT"><option value="glu">Glukosa</option><option value="cr">Kreatinin</option><option value="ur">Ureum ↔ BUN</option><option value="ca">Kalsium</option><option value="chol">Kolesterol</option></select></label>
+          </div>
+          <div class="out" id="cvOut"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PEDS -->
+    <section class="view" id="v-peds" hidden>
+      <h2>Pediatri</h2>
+      <p class="lede">Kartu resusitasi berdasarkan usia, tanda vital normal per kelompok umur, dan rencana rehidrasi diare.</p>
+      <div class="panel" id="c-resus" style="margin-top:24px">
+        <h3>Kartu resusitasi anak</h3>
+        <p class="muted">Berat diestimasi dari usia bila tidak diisi (rumus APLS). Timbang bila memungkinkan.</p>
+        <div class="row" style="margin-top:14px">
+          <label class="f">Usia<input id="pdAge" type="number" inputmode="numeric" min="0" step="1" style="width:110px"></label>
+          <label class="f">Satuan<select id="pdUnit"><option value="y">tahun</option><option value="m">bulan</option></select></label>
+          <label class="f">Berat (kg)<input id="pdW" type="number" inputmode="decimal" step="0.1" placeholder="estimasi" style="width:130px"></label>
+          <button class="btn ghost" type="button" id="pdToDose">Pakai berat di tabel dosis</button>
+        </div>
+        <p class="ref" id="pdNote"></p>
+        <div class="kv" id="pdOut"></div>
+      </div>
+
+      <h3 class="sub-h" id="c-vital">Tanda vital normal</h3>
+      <div class="tbl-wrap vit" style="margin-top:12px">
+        <table>
+          <thead><tr><th>Kelompok usia</th><th>Nadi (×/menit)</th><th>Napas (×/menit)</th><th>Sistolik (mmHg)</th><th>Batas hipotensi</th></tr></thead>
+          <tbody id="vitBody"></tbody>
+        </table>
+      </div>
+      <p class="ref">Nilai saat terjaga, diadaptasi dari PALS 2020. Nadi saat tidur bisa lebih rendah. Usia dalam tahun untuk rumus hipotensi.</p>
+
+      <div class="panel" id="c-dehid" style="margin-top:28px">
+        <h3>Rehidrasi diare anak (WHO)</h3>
+        <p class="muted">Rencana A, B, dan C sesuai derajat dehidrasi</p>
+        <div class="row" style="margin-top:14px">
+          <label class="f">Berat (kg)<input id="dhW" type="number" inputmode="decimal" step="0.1" style="width:120px"></label>
+          <label class="f">Usia<select id="dhAge"><option value="lt">&lt;12 bulan</option><option value="ge" selected>≥12 bulan</option></select></label>
+          <label class="f">Derajat dehidrasi<select id="dhDeg"><option value="a">Tanpa dehidrasi</option><option value="b" selected>Ringan–sedang</option><option value="c">Berat</option></select></label>
+        </div>
+        <div class="out" id="dhOut"></div>
+      </div>
+    </section>
+    <!-- ALGO -->
+    <section class="view" id="v-algo" hidden>
+      <h2>Algoritma kegawatdaruratan</h2>
+      <p class="lede">Ringkasan langkah untuk dibaca cepat di samping pasien. Buka satu algoritma untuk melihat urutannya.</p>
+      <div class="algos" id="algos"></div>
+    </section>
+
+    <!-- HANDOVER -->
+    <section class="view" id="v-ho" hidden>
+      <h2>Serah terima pasien</h2>
+      <p class="lede">Catat pasien yang Anda pegang selama jaga. Data hanya tersimpan di peramban perangkat ini dan tidak dikirim ke server mana pun. Gunakan inisial, jangan nama lengkap atau nomor rekam medis.</p>
+      <form class="ho-form" id="hoForm" autocomplete="off">
+        <label class="f">Bed<input id="hoBed" required maxlength="6" placeholder="3A"></label>
+        <label class="f">Inisial & usia<input id="hoId" required maxlength="30" placeholder="Tn. A, 54 th"></label>
+        <label class="f dx">Diagnosis kerja<input id="hoDx" maxlength="120" placeholder="STEMI anterior, pasca fibrinolitik"></label>
+        <label class="f tri-sel">Triase<select id="hoTri"><option value="merah">Merah</option><option value="kuning" selected>Kuning</option><option value="hijau">Hijau</option></select></label>
+        <label class="f full">Tugas tertunda / hal yang perlu dipantau<textarea id="hoTodo" maxlength="500" placeholder="Cek troponin ulang jam 03.00, konsul kardiologi sudah dihubungi"></textarea></label>
+        <div class="ho-actions full"><button class="btn" type="submit">Tambah pasien</button></div>
+      </form>
+      <div class="ho-bar">
+        <h3 id="hoCount">Belum ada pasien</h3>
+        <div class="ho-actions">
+          <button class="btn ghost" type="button" id="hoCopy">Salin ringkasan</button>
+          <button class="btn ghost" type="button" id="hoClear">Hapus yang selesai</button>
+        </div>
+      </div>
+      <div class="ho-list" id="hoList"></div>
+
+      <h2 class="sub-h" id="c-soap">Catatan SOAP</h2>
+      <p class="lede">Susun catatan pemeriksaan dengan format SOAP, lalu salin ke rekam medis. Draf tersimpan di perangkat ini sampai Anda mengosongkannya.</p>
+      <div class="panel" style="margin-top:16px">
+        <div class="vitals-row">
+          <label class="f">TD (mmHg)<input data-soap id="soTd" placeholder="120/80" maxlength="9"></label>
+          <label class="f">Nadi<input data-soap id="soHr" type="number" inputmode="numeric"></label>
+          <label class="f">Napas<input data-soap id="soRr" type="number" inputmode="numeric"></label>
+          <label class="f">Suhu (°C)<input data-soap id="soT" type="number" inputmode="decimal" step="0.1"></label>
+          <label class="f">SpO₂ (%)<input data-soap id="soSp" type="number" inputmode="numeric"></label>
+        </div>
+        <div class="soap">
+          <label class="f">S — keluhan dan anamnesis<textarea data-soap id="soS" placeholder="Nyeri ulu hati sejak 2 hari, mual, tanpa muntah darah"></textarea></label>
+          <label class="f">O — pemeriksaan fisik dan penunjang<textarea data-soap id="soO" placeholder="Nyeri tekan epigastrium, defans (−), bising usus normal"></textarea></label>
+          <label class="f">A — diagnosis kerja / banding<textarea data-soap id="soA" placeholder="Dispepsia fungsional; DD ulkus peptikum"></textarea></label>
+          <label class="f">P — tata laksana dan rencana<textarea data-soap id="soP" placeholder="Omeprazol 1×20 mg selama 14 hari, edukasi diet, kontrol 2 minggu"></textarea></label>
+        </div>
+        <div class="ho-actions" style="margin-top:14px">
+          <button class="btn" type="button" id="soCopy">Salin catatan</button>
+          <button class="btn ghost" type="button" id="soClear">Kosongkan</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mnav" id="mnav" aria-label="Menu utama"></nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/data/drugs.js"></script>
+<script src="js/data/scores.js"></script>
+<script src="js/data/vaso.js"></script>
+<script src="js/data/algorithms.js"></script>
+<script src="js/data/vitals.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
