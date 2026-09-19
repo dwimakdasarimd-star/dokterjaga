@@ -13,12 +13,13 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('sh
 /* ---------- Navigation ---------- */
 const VIEWS = [
   {id:'home', label:'Beranda', short:'Beranda', icon:'i-home'},
-  {id:'dose', label:'Dosis obat', short:'Dosis', icon:'i-dose'},
+  {id:'patient', label:'Patient workspace', short:'Pasien', icon:'i-patient'},
+  {id:'dose', label:'Tools klinis', short:'Tools', icon:'i-dose'},
   {id:'score', label:'Skor klinis', short:'Skor', icon:'i-score'},
   {id:'calc', label:'Kalkulator', short:'Hitung', icon:'i-calc'},
   {id:'peds', label:'Pediatri', short:'Anak', icon:'i-peds'},
-  {id:'algo', label:'Algoritma', short:'Protokol', icon:'i-algo'},
-  {id:'ho', label:'Catatan jaga', short:'Catatan', icon:'i-ho'}
+  {id:'algo', label:'Emergency', short:'Emergency', icon:'i-emergency'},
+  {id:'ho', label:'Handover', short:'Handover', icon:'i-ho'}
 ];
 function navHTML(mobile){
   return VIEWS.map(v=>`<button type="button" data-view="${v.id}"><svg aria-hidden="true"><use href="#${v.icon}"/></svg>${mobile?v.short:v.label}</button>`).join('');
@@ -33,10 +34,11 @@ function trackRecentView(id){
   if(typeof renderRecentTools === 'function') renderRecentTools();
 }
 function go(id, anchor){
-  VIEWS.forEach(v=>{ $('#v-'+v.id).hidden = v.id!==id; });
+  VIEWS.forEach(v=>{ const node=$('#v-'+v.id); if(node) node.hidden = v.id!==id; });
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-current', b.dataset.view===id?'page':'false'));
   store.set('view', id);
   trackRecentView(id);
+  if(id==='patient' && typeof renderPatientWorkspace==='function') renderPatientWorkspace();
   if(anchor){ anchor(); } else { window.scrollTo({top:0}); }
 }
 document.addEventListener('click', e=>{
@@ -456,6 +458,151 @@ $('#hoFilters').addEventListener('click',e=>{
 });
 renderHO();
 
+/* ---------- Patient workspace ---------- */
+let activePatientId = store.get('activePatientId', null);
+let patientData = store.get('patientData', {});
+
+function defaultPatientDraft(p){
+  return {
+    vitals:{td:'',hr:'',rr:'',temp:'',spo2:''},
+    abcde:{
+      a:{status:'Belum dinilai',note:''},
+      b:{status:'Belum dinilai',note:''},
+      c:{status:'Belum dinilai',note:''},
+      d:{status:'Belum dinilai',note:''},
+      e:{status:'Belum dinilai',note:''}
+    },
+    workingDx:p?.dx||'',
+    ddx:'',
+    plan:p?.todo?[{id:Date.now(),text:p.todo,done:false}]:[],
+    soap:{s:'',o:'',a:p?.dx||'',p:''},
+    timeline:p?.todo?[{id:Date.now()+1,at:Date.now(),text:'Tugas handover: '+p.todo}]:[]
+  };
+}
+function patientDraft(p){
+  const key=String(p.t);
+  if(!patientData[key]) patientData[key]=defaultPatientDraft(p);
+  return patientData[key];
+}
+function savePatientDraft(p,d){
+  patientData[String(p.t)]=d;
+  store.set('patientData',patientData);
+}
+function activePatient(){
+  return patients.find(p=>String(p.t)===String(activePatientId)) || null;
+}
+function patientStamp(ts){
+  return new Date(ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+}
+function selectPatient(id){
+  activePatientId=id;
+  store.set('activePatientId',id);
+  const p=activePatient();
+  if(p) patientDraft(p);
+  renderPatientWorkspace();
+  go('patient');
+}
+function renderPatientWorkspace(){
+  const p=activePatient();
+  const empty=$('#patientEmpty'), ws=$('#patientWorkspace');
+  if(!empty||!ws) return;
+  if(!p){
+    empty.hidden=false; ws.hidden=true;
+    $('#patientFinish').style.display='none';
+    return;
+  }
+  empty.hidden=true; ws.hidden=false;
+  const d=patientDraft(p);
+  $('#patientFinish').style.display='inline-flex';
+  $('#patientFinish').textContent=p.done?'Buka kembali':'Tandai selesai';
+  $('#patientTitle').textContent=`Bed ${p.bed} · ${p.id}`;
+  $('#patientSub').textContent=p.dx || 'Belum ada diagnosis kerja';
+  $('#patientTriage').textContent=p.tri;
+  $('#patientTriage').className=`tri-badge ${p.tri}`;
+  $('#patientName').textContent=p.id;
+  $('#patientMeta').textContent=`Bed ${p.bed} · Triase ${p.tri}`;
+  $('#patientAvatar').textContent=(p.id||'P').replace(/[^A-Za-zÀ-ÿ]/g,'').slice(0,1).toUpperCase()||'P';
+  $('#patientDx').textContent=d.workingDx||p.dx||'Belum ada';
+  const openPlan=d.plan.filter(x=>!x.done).length;
+  $('#patientTaskState').textContent=openPlan?`${openPlan} terbuka`:'Tidak ada';
+  $('#patientUpdated').textContent=d.timeline.length?patientStamp(d.timeline[d.timeline.length-1].at):'Belum ada';
+  $('#patientAlert').textContent='Data workspace ini disimpan hanya di perangkat/browser ini. Hindari memasukkan nama lengkap atau nomor rekam medis.';
+  $('#patientAlert').classList.add('show');
+
+  const vitalDefs=[['td','TD (mmHg)','120/80'],['hr','Nadi /menit','80'],['rr','RR /menit','18'],['temp','Suhu °C','36,8'],['spo2','SpO₂ %','98']];
+  $('#patientVitals').innerHTML=vitalDefs.map(v=>`<div class="vital-input"><label>${esc(v[1])}</label><input data-pv="${v[0]}" value="${esc(d.vitals[v[0]]||'')}" placeholder="${v[2]}" autocomplete="off"></div>`).join('');
+
+  const abc=[['a','A','Airway'],['b','B','Breathing'],['c','C','Circulation'],['d','D','Disability'],['e','E','Exposure']];
+  const statuses=['Belum dinilai','Baik','Perlu perhatian','Masalah aktif'];
+  $('#patientABCDE').innerHTML=abc.map(x=>`<div class="abcde-item"><div class="abcde-letter">${x[1]}</div><strong>${x[2]}</strong><select data-abc-status="${x[0]}">${statuses.map(s=>`<option ${d.abcde[x[0]].status===s?'selected':''}>${esc(s)}</option>`).join('')}</select><textarea data-abc-note="${x[0]}" maxlength="500" placeholder="Catatan bedside…">${esc(d.abcde[x[0]].note||'')}</textarea></div>`).join('');
+
+  $('#patientWorkingDx').value=d.workingDx||'';
+  $('#patientDDx').value=d.ddx||'';
+  $('#patientPlan').innerHTML=d.plan.length?d.plan.map(x=>`<div class="plan-item ${x.done?'done':''}"><input type="checkbox" data-plan-check="${x.id}" ${x.done?'checked':''}><span>${esc(x.text)}</span><button type="button" data-plan-del="${x.id}" aria-label="Hapus rencana">×</button></div>`).join(''):'<div class="timeline-empty">Belum ada rencana. Tambahkan tugas pertama untuk pasien ini.</div>';
+
+  ['S','O','A','P'].forEach(k=>{ const id='patientSoap'+k; if($('#'+id)) $('#'+id).value=d.soap[k.toLowerCase()]||''; });
+  const tl=[...d.timeline].sort((a,b)=>a.at-b.at);
+  $('#patientTimeline').innerHTML=tl.length?tl.slice().reverse().map(x=>`<div class="timeline-item"><small>${patientStamp(x.at)}</small><p>${esc(x.text)}</p></div>`).join(''):'<div class="timeline-empty">Belum ada aktivitas dicatat.</div>';
+}
+function persistPatientView(){
+  const p=activePatient(); if(!p) return;
+  const d=patientDraft(p);
+  ['td','hr','rr','temp','spo2'].forEach(k=>{const el=document.querySelector(`[data-pv="${k}"]`);if(el)d.vitals[k]=el.value;});
+  ['a','b','c','d','e'].forEach(k=>{
+    const s=document.querySelector(`[data-abc-status="${k}"]`);
+    const n=document.querySelector(`[data-abc-note="${k}"]`);
+    if(s)d.abcde[k].status=s.value;
+    if(n)d.abcde[k].note=n.value;
+  });
+  d.workingDx=$('#patientWorkingDx').value.trim();
+  d.ddx=$('#patientDDx').value.trim();
+  d.soap={s:$('#patientSoapS').value,o:$('#patientSoapO').value,a:$('#patientSoapA').value,p:$('#patientSoapP').value};
+  savePatientDraft(p,d);
+  if(d.workingDx!==p.dx){p.dx=d.workingDx;store.set('patients',patients);}
+  $('#patientSaveState').textContent='Tersimpan lokal · baru saja';
+  renderHomeMeta();
+  renderHO();
+}
+$('#patientWorkspace').addEventListener('input',e=>{
+  if(e.target.matches('[data-pv],[data-abc-note],#patientWorkingDx,#patientDDx,[id^="patientSoap"]')) persistPatientView();
+});
+$('#patientWorkspace').addEventListener('change',e=>{
+  if(e.target.matches('[data-pv],[data-abc-status],[data-abc-note,#patientWorkingDx,#patientDDx]')) persistPatientView();
+});
+$('#patientPlanAdd').addEventListener('click',()=>{
+  const p=activePatient(); const text=$('#patientPlanInput').value.trim(); if(!p||!text)return;
+  const d=patientDraft(p); d.plan.push({id:Date.now(),text,done:false});
+  d.timeline.push({id:Date.now()+1,at:Date.now(),text:'Rencana ditambahkan: '+text});
+  $('#patientPlanInput').value=''; savePatientDraft(p,d); renderPatientWorkspace();
+});
+$('#patientPlanInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#patientPlanAdd').click();}});
+$('#patientPlan').addEventListener('change',e=>{
+  const id=e.target.closest('[data-plan-check]')?.dataset.planCheck;if(!id)return;
+  const p=activePatient(),d=patientDraft(p),item=d.plan.find(x=>String(x.id)===String(id));if(!item)return;
+  item.done=e.target.checked;d.timeline.push({id:Date.now(),at:Date.now(),text:item.done?'Rencana selesai: ':'Rencana dibuka kembali: '+item.text});
+  savePatientDraft(p,d);renderPatientWorkspace();
+});
+$('#patientPlan').addEventListener('click',e=>{
+  const b=e.target.closest('[data-plan-del]');if(!b)return;
+  const p=activePatient(),d=patientDraft(p),idx=d.plan.findIndex(x=>String(x.id)===String(b.dataset.planDel));if(idx<0)return;
+  const text=d.plan[idx].text;d.plan.splice(idx,1);d.timeline.push({id:Date.now(),at:Date.now(),text:'Rencana dihapus: '+text});savePatientDraft(p,d);renderPatientWorkspace();
+});
+$('#patientTimelineForm').addEventListener('submit',e=>{
+  e.preventDefault();const p=activePatient(),text=$('#patientTimelineInput').value.trim();if(!p||!text)return;
+  const d=patientDraft(p),now=Date.now();d.timeline.push({id:now,at:now,text});savePatientDraft(p,d);$('#patientTimelineInput').value='';renderPatientWorkspace();
+});
+$('#patientFinish').addEventListener('click',()=>{
+  const p=activePatient();if(!p)return;p.done=!p.done;store.set('patients',patients);renderPatientWorkspace();renderHomeMeta();renderHO();toast(p.done?'Pasien ditandai selesai':'Pasien dibuka kembali');
+});
+$('#patientOpenSoap').addEventListener('click',()=>{
+  const p=activePatient();if(!p)return;
+  persistPatientView();const d=patientDraft(p);
+  const map={S:'soS',O:'soO',A:'soA',P:'soP'};Object.entries(map).forEach(([k,id])=>{$('#'+id).value=d.soap[k.toLowerCase()]||'';});
+  ['soTd','soHr','soRr','soT','soSp'].forEach(id=>$('#'+id).value='');
+  store.set('soap', {soTd:'',soHr:'',soRr:'',soT:'',soSp:'',soS:d.soap.s||'',soO:d.soap.o||'',soA:d.soap.a||'',soP:d.soap.p||''});
+  go('ho',()=>$('#c-soap').scrollIntoView({block:'start'}));toast('SOAP pasien dibuka di editor');
+});
+
 /* ---------- Pediatrics ---------- */
 const VITALS = DJ.VITALS;
 $('#vitBody').innerHTML = VITALS.map(r=>`<tr>${r.map((c,i)=>`<td${i?' class="num"':''}>${i?esc(c):`<b>${esc(c)}</b>`}</td>`).join('')}</tr>`).join('');
@@ -553,6 +700,7 @@ const INDEX = [
   {t:'Tanda vital normal anak', k:'pediatri anak tanda vital nadi napas tekanan darah', cat:'Pediatri', go:jumpTo('peds','c-vital')},
   {t:'Rehidrasi diare anak', k:'pediatri anak diare dehidrasi oralit rencana who', cat:'Pediatri', go:jumpTo('peds','c-dehid')},
   ...ALGOS.map(a=>({t:a.title, k:`${a.title} ${a.tag[1]} algoritma protokol`, cat:'Algoritma', go:()=>go('algo',()=>{const el=$('#a-'+a.id); el.open=true; el.scrollIntoView({block:'start'});})})),
+  {t:'Patient workspace', k:'patient workspace pasien assessment abcde vitals diagnosis plan timeline', cat:'Pasien', go:()=>{const p=activePatient()||patients.find(x=>!x.done);p?selectPatient(p.t):go('ho',()=>$('#hoBed').focus());}},
   {t:'Serah terima pasien', k:'operan serah terima handover pasien catatan', cat:'Catatan', go:()=>go('ho',()=>$('#hoBed').focus())},
   {t:'Catatan SOAP', k:'soap rekam medis catatan poliklinik anamnesis', cat:'Catatan', go:jumpTo('ho','c-soap')}
 ];
@@ -600,12 +748,12 @@ const QUICK_TOOLS = [
   ['Skor klinis','NEWS2, GCS, HEART, Wells, dll.',()=>go('score'),'i-score'],
   ['Kalkulator','AGD, eGFR, MAP, vasoaktif',()=>go('calc'),'i-calc'],
   ['Emergency','Protokol kegawatdaruratan',()=>go('algo'),'i-emergency'],
-  ['Pasien','Patient workspace & handover',()=>go('ho',()=>$('#hoBed').focus()),'i-patient'],
+  ['Pasien','Patient workspace & handover',()=>{const p=activePatient()||patients.find(x=>!x.done);p?p && selectPatient(p.t):go('ho',()=>$('#hoBed').focus());},'i-patient'],
   ['Pediatri','Resusitasi, vital, rehidrasi',()=>go('peds'),'i-peds']
 ];
 $('#quickTools').innerHTML = QUICK_TOOLS.map((x,i)=>`<button type="button" class="quick-tool" data-quick="${i}"><svg aria-hidden="true" width="24" height="24"><use href="#${x[3]}"/></svg><b>${esc(x[0])}</b><span>${esc(x[1])}</span></button>`).join('');
 $('#quickTools').addEventListener('click',e=>{const b=e.target.closest('[data-quick]');if(b)QUICK_TOOLS[+b.dataset.quick][2]();});
-$('#homePatients').addEventListener('click',e=>{const b=e.target.closest('[data-home-patient]');if(b){go('ho',()=>{const target=document.querySelector(`[data-done="${b.dataset.homePatient}"]`);(target||$('#hoBed')).scrollIntoView({block:'center'});});}});
+$('#homePatients').addEventListener('click',e=>{const b=e.target.closest('[data-home-patient]');if(b)selectPatient(b.dataset.homePatient);});
 $('#recentList').addEventListener('click',e=>{const b=e.target.closest('[data-recent]');if(b)go(b.dataset.recent);});
 $('#clearRecent').addEventListener('click',()=>{recentViews=[];store.set('recentViews',[]);renderRecentTools();toast('Riwayat dibersihkan');});
 $('#focusSearch').addEventListener('click',()=>$('#q').focus());
@@ -626,7 +774,7 @@ document.addEventListener('keydown',e=>{
   const typing=tag==='input'||tag==='textarea'||tag==='select'||e.target?.isContentEditable;
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();go('home');$('#q').focus();return;}
   if(e.key==='/'&&!typing){e.preventDefault();go('home');$('#q').focus();return;}
-  if(!typing && /^[1-7]$/.test(e.key)){const v=VIEWS[+e.key-1];if(v)go(v.id);}
+  if(!typing && /^[1-8]$/.test(e.key)){const v=VIEWS[+e.key-1];if(v)go(v.id);}
   if(e.key==='Escape' && !$('#timerModal').hidden) closeTimer();
 });
 const byTitle = t => () => INDEX.find(x=>x.t===t).go();
