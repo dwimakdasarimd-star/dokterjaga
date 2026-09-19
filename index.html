@@ -164,6 +164,35 @@
             <div class="abcde-grid" id="patientABCDE"></div>
           </div>
 
+          <section class="patient-section panel reasoning-board">
+            <div class="section-head-line">
+              <div><div class="page-kicker">Clinical reasoning</div><h3>Reasoning board</h3><span class="muted small">Strukturkan cara berpikir tanpa mengunci keputusan klinis.</span></div>
+              <span class="save-state" id="reasoningSaveState">Tersimpan lokal</span>
+            </div>
+            <div class="reasoning-frame">
+              <label class="f"><b>Keluhan utama / problem representation</b><textarea id="reasoningProblem" maxlength="700" placeholder="Contoh: nyeri dada akut, onset 2 jam, disertai diaphoresis…"></textarea></label>
+              <div class="reasoning-flags">
+                <div class="reasoning-subhead"><b>Red flags yang perlu diperiksa</b><span class="muted">Checklist sebagai pengingat, bukan diagnosis.</span></div>
+                <div class="flag-grid" id="reasoningFlags"></div>
+              </div>
+            </div>
+            <div class="reasoning-builder">
+              <div>
+                <div class="reasoning-subhead"><b>Diagnosis banding terstruktur</b><span class="muted">Tambahkan hipotesis dan alasan klinis.</span></div>
+                <div class="reasoning-list" id="reasoningList"></div>
+                <div class="reasoning-add">
+                  <input id="reasoningDxInput" maxlength="140" placeholder="Tambah diagnosis / hipotesis…">
+                  <button class="btn" type="button" id="reasoningDxAdd">Tambah</button>
+                </div>
+              </div>
+              <div class="reasoning-notes">
+                <label class="f"><b>Temuan yang mendukung</b><textarea id="reasoningFor" maxlength="800" placeholder="Temuan positif yang meningkatkan kemungkinan…"></textarea></label>
+                <label class="f"><b>Temuan yang menentang</b><textarea id="reasoningAgainst" maxlength="800" placeholder="Temuan negatif / alternatif yang perlu dipikirkan…"></textarea></label>
+                <label class="f"><b>Pemeriksaan yang masih dibutuhkan</b><textarea id="reasoningWorkup" maxlength="800" placeholder="Lab, imaging, monitoring, konsultasi, serial assessment…"></textarea></label>
+              </div>
+            </div>
+          </section>
+
           <div class="patient-two-col">
             <section class="patient-section panel">
               <div class="section-head-line"><div><div class="page-kicker">Assessment</div><h3>Diagnosis</h3></div></div>
