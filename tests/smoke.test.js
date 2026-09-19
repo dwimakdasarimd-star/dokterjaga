@@ -42,6 +42,20 @@ JSDOM.fromFile(file, { runScripts: 'dangerously', resources: new LocalOnly(), pr
       assert.match($('#homeGrid').textContent, /Di IGD/);
       assert.match($('#quickTools').textContent, /Dosis obat IGD/);
       assert.match($('#toolCount').textContent, /\d+/);
+      assert.ok($('#timerBtn'));
+      assert.ok($('#recentPanel'));
+    });
+    check('Timer klinis berfungsi', () => {
+      $('#timerBtn').click();
+      assert.strictEqual($('#timerModal').hidden, false);
+      $('[data-min="1"]').click();
+      assert.strictEqual($('#timerDisplay').textContent, '01:00');
+      $('#timerClose').click();
+      assert.strictEqual($('#timerModal').hidden, true);
+    });
+    check('Filter handover siap', () => {
+      assert.ok($('#hoSearch'));
+      assert.ok($('[data-ho-filter="terbuka"]'));
     });
     check('Tidak ada error JavaScript', () => assert.deepStrictEqual(errors, []));
 
