@@ -25,6 +25,10 @@
   <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
   <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6M12 2v3"/></symbol>
   <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10.5 10.5 0 0 1 14 0M8.5 15.5a6 6 0 0 1 7 0"/><path d="M12 19h.01"/></symbol>
+  <symbol id="i-patient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21c.8-4.2 3.3-6.5 8-6.5s7.2 2.3 8 6.5"/><path d="M19 11v5M16.5 13.5h5"/></symbol>
+  <symbol id="i-emergency" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 20h18L12 3z"/><path d="M12 9v5M12 17h.01"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 5.5V21M8 7h8M8 11h8"/></symbol>
+  <symbol id="i-learning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 9-5 9 5-9 5-9-5z"/><path d="M7 10.5V16c2.8 2.4 7.2 2.4 10 0v-5.5M21 8v7"/></symbol>
 </svg>
 
 <div class="app">
@@ -57,10 +61,19 @@
 
     <!-- HOME -->
     <section class="view" id="v-home">
-      <div class="home-hero">
-        <div class="page-kicker">Clinical workspace</div>
-        <h2>Apa yang Anda butuhkan sekarang?</h2>
-        <p class="lede">Satu workspace cepat untuk dokter jaga: cari alat, hitung dosis, nilai skor, buka algoritma, dan kelola handover tanpa berpindah aplikasi.</p>
+      <div class="home-hero cockpit-hero">
+        <div class="cockpit-top">
+          <div>
+            <div class="page-kicker">Clinical cockpit</div>
+            <h2>Good evening, Dokter</h2>
+            <p class="lede">Satu workspace untuk keputusan klinis cepat, pasien aktif, dan handover selama shift.</p>
+          </div>
+          <div class="shift-card">
+            <span class="shift-icon">◐</span>
+            <div><small>Shift malam</small><strong id="homeShiftLabel">19:00 — 07:00</strong></div>
+            <span class="online-pill"><span class="status-dot"></span> <span id="homeOnlineText">Online</span></span>
+          </div>
+        </div>
         <div class="home-toolbar">
           <div class="search">
             <svg aria-hidden="true"><use href="#i-search"/></svg>
@@ -73,7 +86,26 @@
           <div class="home-stat"><span>Kasus aktif</span><strong id="homeOpenTasks">0</strong></div>
           <div class="home-stat"><span>Status jaga</span><strong id="homeShiftState">Belum mulai</strong></div>
         </div>
+        <div class="section-head compact-head">
+          <div><div class="page-kicker">Akses cepat</div><h3>Tools yang paling sering dipakai</h3></div>
+        </div>
         <div class="quick-tools" id="quickTools"></div>
+        <div class="cockpit-grid">
+          <section class="cockpit-card active-card">
+            <div class="card-head">
+              <div><div class="page-kicker">Patient workspace</div><h3>Pasien aktif</h3></div>
+              <button class="text-link" type="button" data-view="ho">Lihat semua →</button>
+            </div>
+            <div class="home-patient-list" id="homePatients"></div>
+          </section>
+          <aside class="cockpit-card focus-card">
+            <div class="page-kicker">Shift briefing</div>
+            <h3>Fokus malam ini</h3>
+            <div class="focus-row"><span class="focus-number" id="focusOpen">0</span><div><b>tugas terbuka</b><small>Butuh follow-up sebelum handover</small></div></div>
+            <div class="focus-row"><span class="focus-number">01</span><div><b>Clinical safety</b><small>Gunakan inisial dan verifikasi protokol lokal</small></div></div>
+            <button class="btn" type="button" data-view="ho">Buka patient workspace</button>
+          </aside>
+        </div>
         <div class="recent-panel" id="recentPanel" hidden>
           <div class="recent-head"><div><div class="page-kicker">Riwayat</div><h3>Terakhir dibuka</h3></div><button class="btn ghost" type="button" id="clearRecent">Bersihkan</button></div>
           <div class="recent-list" id="recentList"></div>
@@ -321,7 +353,16 @@
 
     <!-- HANDOVER -->
     <section class="view" id="v-ho" hidden>
-      <h2>Serah terima pasien</h2>
+      <div class="workspace-header">
+        <div>
+          <div class="page-kicker">Patient workspace</div>
+          <h2>Pasien & handover</h2>
+          <p class="lede">Kelola pasien aktif, triase, tugas tertunda, dan catatan SOAP dalam satu ruang kerja.</p>
+        </div>
+        <div class="workspace-actions">
+          <button class="btn ghost" type="button" onclick="document.getElementById('hoBed').focus()">+ Tambah pasien</button>
+        </div>
+      </div>
       <p class="lede">Catat pasien yang Anda pegang selama jaga. Data hanya tersimpan di peramban perangkat ini dan tidak dikirim ke server mana pun. Gunakan inisial, jangan nama lengkap atau nomor rekam medis.</p>
       <form class="ho-form" id="hoForm" autocomplete="off">
         <label class="f">Bed<input id="hoBed" required maxlength="6" placeholder="3A"></label>
