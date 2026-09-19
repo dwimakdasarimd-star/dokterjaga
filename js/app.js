@@ -65,7 +65,7 @@ $('#shiftBtn').addEventListener('click', ()=>{
     if(!confirm('Akhiri jaga dan setel ulang penghitung waktu?')) return;
     shiftStart = null; toast('Jaga selesai');
   } else { shiftStart = Date.now(); toast('Jaga dimulai'); }
-  store.set('shiftStart', shiftStart); renderShiftBtn(); tick();
+  store.set('shiftStart', shiftStart); renderShiftBtn(); tick(); renderHomeMeta();
 });
 renderShiftBtn(); tick(); setInterval(tick, 1000);
 
@@ -378,6 +378,7 @@ $('#hoCopy').addEventListener('click', ()=>{
   (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(()=>toast('Ringkasan disalin')).catch(()=>{ prompt('Salin ringkasan berikut:', txt); });
 });
 renderHO();
+renderHomeMeta();
 
 /* ---------- Pediatrics ---------- */
 const VITALS = DJ.VITALS;
@@ -476,9 +477,26 @@ const INDEX = [
   {t:'Tanda vital normal anak', k:'pediatri anak tanda vital nadi napas tekanan darah', cat:'Pediatri', go:jumpTo('peds','c-vital')},
   {t:'Rehidrasi diare anak', k:'pediatri anak diare dehidrasi oralit rencana who', cat:'Pediatri', go:jumpTo('peds','c-dehid')},
   ...ALGOS.map(a=>({t:a.title, k:`${a.title} ${a.tag[1]} algoritma protokol`, cat:'Algoritma', go:()=>go('algo',()=>{const el=$('#a-'+a.id); el.open=true; el.scrollIntoView({block:'start'});})})),
-  {t:'Serah terima pasien', k:'operan serah terima handover pasien catatan', cat:'Catatan', go:()=>go('ho',()=>{$('#hoBed').focus();})},
+  {t:'Serah terima pasien', k:'operan serah terima handover pasien catatan', cat:'Catatan', go:()=>go('ho',()=>$('#hoBed').focus())},
   {t:'Catatan SOAP', k:'soap rekam medis catatan poliklinik anamnesis', cat:'Catatan', go:jumpTo('ho','c-soap')}
 ];
+function renderHomeMeta(){
+  const tools = INDEX.length;
+  const open = patients.filter(p=>!p.done).length;
+  $('#toolCount').textContent = tools;
+  $('#homeOpenTasks').textContent = open;
+  $('#homeShiftState').textContent = shiftStart ? 'Sedang jaga' : 'Belum mulai';
+}
+const QUICK_TOOLS = [
+  ['Dosis obat IGD','Hitung cepat berdasarkan berat badan',()=>go('dose',()=>$('#bw').focus())],
+  ['Skor klinis','NEWS2, GCS, HEART, Wells, dll.',()=>go('score')],
+  ['Kalkulator','AGD, eGFR, MAP, Parkland, vasoaktif',()=>go('calc')],
+  ['Algoritma','Buka protokol kegawatdaruratan',()=>go('algo')]
+];
+$('#quickTools').innerHTML = QUICK_TOOLS.map((x,i)=>`<button type="button" class="quick-tool" data-quick="${i}"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></button>`).join('');
+$('#quickTools').addEventListener('click',e=>{const b=e.target.closest('[data-quick]');if(b)QUICK_TOOLS[+b.dataset.quick][2]();});
+$('#focusSearch').addEventListener('click',()=>$('#q').focus());
+
 function runSearch(){
   const q = $('#q').value.trim().toLowerCase();
   if(!q){ $('#results').innerHTML=''; return; }
