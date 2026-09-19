@@ -37,6 +37,12 @@ JSDOM.fromFile(file, { runScripts: 'dangerously', resources: new LocalOnly(), pr
     check('Pediatri: 3 tahun = 14 kg', () => { set('pdAge', 3); assert.match($('#pdOut').textContent, /14 kg/); });
     check('NEWS2 tampil', () => { d.querySelector('[data-s="news2"]').click(); assert.match($('#verdict').textContent, /Risiko rendah/); });
     check('Pencarian menemukan stroke', () => { set('q', 'stroke'); assert.match($('#results').textContent, /Stroke akut/); });
+
+    check('Home dashboard tampil', () => {
+      assert.match($('#homeGrid').textContent, /Di IGD/);
+      assert.match($('#quickTools').textContent, /Dosis obat IGD/);
+      assert.match($('#toolCount').textContent, /\d+/);
+    });
     check('Tidak ada error JavaScript', () => assert.deepStrictEqual(errors, []));
 
     checks.forEach(([s, n]) => console.log(`${s.padEnd(6)} ${n}`));
