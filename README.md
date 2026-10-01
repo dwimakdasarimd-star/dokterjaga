@@ -53,3 +53,10 @@ Hubungkan repo ini ke proyek Vercel `dokter-jaga` (Settings → Git). Setiap pus
 ## Penafian klinis
 
 Dokter Jaga adalah alat bantu hitung dan pengingat untuk tenaga medis, bukan pengganti penilaian klinis. Dosis dan ambang batas mengikuti pedoman internasional yang umum dipakai; selalu verifikasi dengan formularium dan protokol setempat sebelum pemberian.
+
+
+## Modul klinis utama
+
+Landing page terbaru menambahkan 12 modul bergaya clinical workspace: **Dosis Obat, Kalkulator Klinis, Panduan Klinis, Skrining & Skor, Interaksi Obat, Indikasi & Kontraindikasi, Antropometri Anak, Imunisasi, Perkembangan Anak, Modul EKG, Kamus ICD-10, dan Toolkit IGD**.
+
+Modul tambahan berada di `js/clinical-modules.js` dan `css/clinical-modules.css`, berjalan client-side dan dapat digunakan tanpa backend. Data yang bersifat referensi diberi sumber/penanda agar dapat diverifikasi kembali.
