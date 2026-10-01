@@ -4,7 +4,7 @@
   --cm-accent:#4b5cff; --cm-soft:#f1f4ff; --cm-white:#fff;
 }
 body{font-family:Lato,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#v-home{background:var(--cm-bg)!important;padding:22px 28px 48px!important;min-height:calc(100vh - 64px)}
+#v-home .home-hero,#v-home>.notice,#v-home>.updated{display:none!important}\n.cm-home-wrap{max-width:1400px;margin:0 auto}\n#v-home{background:var(--cm-bg)!important;padding:22px 28px 48px!important;min-height:calc(100vh - 64px)}
 #v-home>.home-grid{display:grid!important;grid-template-columns:1fr 1fr;gap:0!important;border:1.5px solid var(--cm-line);border-radius:18px;overflow:hidden;background:#fff;margin-top:28px}
 #v-home>.home-grid>.cm-module-card{min-height:176px;border:0;border-right:1px solid var(--cm-line);border-bottom:1px solid var(--cm-line)}
 #v-home>.home-grid>.cm-module-card:nth-child(2n){border-right:0}
